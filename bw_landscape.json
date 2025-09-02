@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "video": {
+    "grid": "3x1",
+    "playbackMode": "fixed-video",
+    "gap": "0.8",
+    "radius": "1.2",
+    "useBg": true,
+    "bgColor": "#000000",
+    "borderWidth": "0.4",
+    "borderColor": "#ffffff",
+    "playlistFileNames": [
+      "SampleVideo_1280x720_1mb.mp4",
+      "large.mp4",
+      "sample_960x540.mp4",
+      "istock-862700088_preview.mp4"
+    ]
+  },
+  "logo": {
+    "fileName": null,
+    "size": "11",
+    "padding": "0",
+    "radius": "0",
+    "position": "center",
+    "margin": "1",
+    "bgColor": "#000000",
+    "bgOpacity": "0",
+    "blur": "0"
+  },
+  "marquee": {
+    "enabled": true,
+    "text": "3 видео по горизонтали",
+    "fontFamily": "Georgia, serif",
+    "bold": true,
+    "italic": false,
+    "position": "bottom",
+    "spacing": "10",
+    "fontSize": "4",
+    "speed": "20",
+    "marginX": "0",
+    "marginY": "2.9",
+    "radius": "0",
+    "blur": "0.9",
+    "fontColor": "#000000",
+    "bgColor": "#000000",
+    "bgOpacity": "0"
+  }
+}

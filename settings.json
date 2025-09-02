@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "video": {
+    "grid": "2x2",
+    "playbackMode": "fixed-video",
+    "gap": "0",
+    "radius": "0",
+    "useBg": false,
+    "bgColor": "#000000",
+    "playlistFileNames": [
+      "istock-862700088_preview.mp4",
+      "large.mp4",
+      "sample_960x540.mp4",
+      "SampleVideo_1280x720_1mb.mp4"
+    ]
+  },
+  "logo": {
+    "fileName": "logo.png",
+    "size": "15",
+    "padding": "0",
+    "radius": "10",
+    "position": "center",
+    "margin": "1",
+    "bgColor": "#000000",
+    "bgOpacity": "31",
+    "blur": "0.25"
+  },
+  "marquee": {
+    "enabled": true,
+    "text": "Это пример бегущей строки. Вы можете изменить этот текст в настройках.",
+    "fontFamily": "'Palatino Linotype', 'Book Antiqua', Palatino, serif",
+    "bold": false,
+    "italic": false,
+    "underline": false,
+    "position": "bottom",
+    "spacing": "10",
+    "fontSize": "4",
+    "speed": "20",
+    "margin": "0.9",
+    "radius": "6",
+    "blur": "0.55",
+    "fontColor": "#ffffff",
+    "bgColor": "#000000",
+    "bgOpacity": "30"
+  }
+}

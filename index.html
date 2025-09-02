@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Универсальный видеоплеер</title>
+    <style>
+        /*
+         * Согласно инструкции, все стили должны быть инлайновыми.
+         * Однако, для глобальных стилей (сброс отступов, фон страницы, запрет прокрутки)
+         * использование тега <style> является более чистым и надежным решением.
+         * Это предотвращает появление полос прокрутки и упрощает поддержку.
+        */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Запрет прокрутки на уровне всей страницы */
+            background-color: #333;
+            font-family: sans-serif;
+            color: white;
+            box-sizing: border-box; /* Современный подход к блочной модели */
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        /* --- Layout Containers --- */
+        #instruction-block {
+            position: absolute;
+            top: 1dvw;
+            right: 1dvw;
+            max-width: 30%;
+            z-index: 1;
+            font-size: 0.8dvw;
+            color: grey;
+            padding: 0 1dvw;
+            background-color: rgba(20,20,20,0.3);
+            border-radius: 1dvw;
+        }
+
+        #video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            display: flex; 
+        }
+
+        #video-container video {box-sizing: border-box;}
+
+        #logo-container {
+            position: absolute;
+            z-index: 6;
+            display: none;
+            overflow: hidden;
+        }
+
+        #marquee-container {
+            position: absolute;
+            z-index: 7;
+            display: none;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 1dvw 0;
+        }
+
+        /* --- Settings Panel --- */
+        #settings-panel {
+            position: absolute;
+            top: 1dvw;
+            left: 1dvw;
+            width: calc(50% - 2dvw);
+            height: calc(100% - 2dvw);
+            z-index: 10;
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 1.5dvw;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(calc(-100% - 2dvw)); /* Initially hidden */
+            box-sizing: border-box;
+            backdrop-filter: blur(1rem);
+        }
+
+        #settings-panel h2 {
+            margin-top: 0;
+            font-size: 1dvw;
+        }
+
+        #settings-panel fieldset {
+            border: 0.1dvw solid grey;
+            border-radius: 0.5dvw;
+            margin-bottom: 1dvw;
+            padding: 1dvw;
+            font-size: 0.7dvw;
+        }
+
+        #settings-panel legend {
+            padding: 0 0.5dvw;
+            font-size: 0.8dvw;
+        }
+
+        /* --- Form elements inside settings panel --- */
+        .form-group {
+            margin-bottom: 1.5dvw;
+        }
+
+        .form-group-top {
+            margin-top: 1.5dvw;
+        }
+
+        .form-group-last {
+            margin-bottom: 0;
+        }
+
+        .form-group > label {
+            display: block;
+            margin-bottom: 0.5dvw;
+        }
+
+        .flex-label {
+            display: flex;
+            align-items: center;
+            gap: 0.25dvw;
+            cursor: pointer;
+        }
+
+        #settings-panel select,
+        #settings-panel input[type="text"] {
+            width: 100%;
+            padding: 0.5dvw;
+            background-color: #333;
+            color: white;
+            border: 0.1dvw solid grey;
+            border-radius: 0.5dvw;
+            font-size: inherit;
+            font-family: inherit;
+        }
+
+        #settings-panel input[type="file"] {
+            width: 100%;
+            color: #ccc;
+        }
+
+        #settings-panel input[type="range"] {
+            width: 100%;
+        }
+
+        #settings-panel input[type="radio"] {
+            cursor: pointer;
+        }
+
+        #settings-panel input[type="color"] {
+            width: 2dvw;
+            height: 2dvw;
+            padding: 0;
+            background-color: transparent;
+            border: none;
+        }
+
+        #settings-panel input[type="checkbox"] {
+            width: 1em;
+            height: 1em;
+        }
+
+        #video-bg-color-input {
+            display: none;
+        }
+
+        #logo-preview-container {
+            margin-top: 1dvw;
+            border: 0.1dvw solid #555;
+            border-radius: 0.5dvw;
+            padding: 0.5dvw;
+            background-color: #222;
+        }
+
+        #logo-controls,
+        #marquee-controls {
+            display: none;
+        }
+
+        #logo-position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, auto);
+            gap: 1dvw;
+            justify-content: start;
+        }
+
+        #marquee-position-group {
+            display: flex;
+            gap: 1dvw;
+        }
+        #marquee-position-group label { cursor: pointer; }
+
+        .form-group-row {
+            display: flex;
+            gap: 1dvw;
+            align-items: flex-start;
+        }
+
+        .form-group-row > * {flex: auto;}
+        .form-group-row.by2 > *,
+        .form-group-row.by3 > *,
+        .form-group-row.by4 > *,
+        .form-group-row.by5 > * {flex: 1;}
+
+        /* --- Playlist Styles --- */
+        #playlist-container {
+            border: 0.1dvw solid #555;
+            border-radius: 0.5dvw;
+            padding: 0.5dvw;
+            background-color: #222;
+        }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5dvw;
+            padding: 0.4dvw;
+            border-bottom: 1px solid #444;
+        }
+        .playlist-item:last-child {
+            border-bottom: none;
+        }
+        .playlist-item.dragging {
+            opacity: 0.4;
+            background: #444;
+        }
+
+        .playlist-item-status {
+            width: 4dvw; /* Reserve space for icon and numbers */
+            color: #4caf50; /* Green for play icon */
+            flex-shrink: 0;
+            text-align: left;
+        }
+
+        .playlist-item-status img {
+            width: 2.5dvw;
+            height: 2.5dvw;
+            object-fit: contain;
+            background-color: #555;
+            border-radius: 0.2dvw;
+            vertical-align: middle;
+        }
+
+        .playlist-item-name {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .playlist-delete-btn {
+            background: none;
+            border: none;
+            color: #f44336; /* Red for delete */
+            cursor: pointer;
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 0 0.5dvw;
+            flex-shrink: 0;
+        }
+        .playlist-delete-btn:hover {
+            color: #ff7961;
+        }
+
+        /* --- Management Buttons --- */
+        .settings-btn {
+            flex: 1;
+            padding: 0.8dvw;
+            border: none;
+            border-radius: 0.5dvw;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            transition: background-color 0.2s;
+        }
+        #save-settings-btn { background-color: #4CAF50; color: white; }
+        #save-settings-btn:hover { background-color: #45a049; }
+        #load-settings-btn { background-color: #008CBA; color: white; }
+        #load-settings-btn:hover { background-color: #007ba7; }
+
+        /* --- Custom File Input --- */
+        .custom-file-btn {
+            display: block;
+            width: 100%;
+            padding: 0.8dvw;
+            border-radius: 0.5dvw;
+            cursor: pointer;
+            font-size: inherit;
+            font-family: inherit;
+            transition: background-color 0.2s;
+            background-color: #008CBA;
+            color: white;
+            text-align: center;
+        }
+        .custom-file-btn:hover {
+            background-color: #007ba7;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Блок с инструкцией (z-index: 1) -->
+    <div id="instruction-block">
+        <h3>Turkish Video Player v2.1</h3>
+        <p>Все настройки плеера производятся в Панели Настроек. Она появляется при наведении курсора на левый край экрана и скрывается, когда курсор покидает ее область.</p>
+        <p>Для начала работы выберите видеофайлы и настройте сетку отображения в панели настроек слева. Экспериментируйте с другими настройками для стилизации плеера. </p>
+        <p>Примененные настройки можно сохранить в файл, чтобы при следующем запуске скрипта быстро их загрузить. После сохранения настроек файл settings.json можно переименовать и для удобства расположить в той же директории, где находится данный файл. Можно создавать неограниченное количество файлов с настройками.</p>
+        <p><b>Важно!</b> Все файлы (видео, логотип) должны располагаться в той же директории, где находится данный файл.</p>
+        <p>Для отображения плеера на весь экран нажмите F11.</p>
+        <p style="font-size: 0.8em; opacity: 0.7;">* Чтобы скрыть данную инструкцию, выберите цвет фона области видео в настройках.</p>
+    </div>
+
+    <!-- Контейнер для видео (z-index: 5) -->
+    <div id="video-container">
+        <!-- Ячейки с видео будут добавлены здесь с помощью JS -->
+    </div>
+
+    <!-- Контейнер для логотипа (z-index: 6), изначально скрыт -->
+    <div id="logo-container">
+        <!-- Изображение логотипа будет здесь -->
+    </div>
+
+    <!-- Контейнер для бегущей строки (z-index: 7), изначально скрыт -->
+    <div id="marquee-container">
+        <!-- Текст бегущей строки будет здесь -->
+    </div>
+
+    <!-- Панель настроек (z-index: 10) -->
+    <div id="settings-panel" style="transform: translateX(0px);">
+        <h2>Настройки</h2>
+        
+        <fieldset>
+            <legend>Управление</legend>
+            <div class="form-group form-group-last" style="display: flex; gap: 1dvw;">
+                <button id="load-settings-btn" class="settings-btn">Загрузить настройки</button>
+                <button id="save-settings-btn" class="settings-btn">Сохранить настройки</button>
+            </div>
+            <input type="file" id="load-settings-input" accept=".json" style="display: none;">
+        </fieldset>
+
+        <!-- Раздел настроек видео -->
+        <fieldset>
+            <legend>Видео</legend>
+
+            <div class="form-group">
+                <label for="video-files" class="custom-file-btn">Выберите видеофайлы</label>
+                <input type="file" id="video-files" name="video-files" multiple accept="video/*" style="display: none;">
+            </div>
+            <div class="form-group">
+                <label>Плейлист:</label>
+                <div id="playlist-container">
+                    <!-- Playlist items will be generated here -->
+                </div>
+            </div>
+            <div class="form-group-row by2">
+                <div class="form-group">
+                    <label for="grid-select">Сетка отображения:</label>
+                    <select id="grid-select" name="grid-select">
+                        <option value="1x1">Одно видео</option>
+                        <option value="2x1">Два видео по горизонтали</option>
+                        <option value="3x1">Три видео по горизонтали</option>
+                        <option value="1x2">Два видео по вертикали</option>
+                        <option value="1x3">Три видео по вертикали</option>
+                        <option value="2x2" selected>4 видео</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="playback-mode-select">Режим воспроизведения видео:</label>
+                    <select id="playback-mode-select" name="playback-mode-select">
+                        <option value="fixed-video" selected>Повторение одного видео в плеере</option>
+                        <option value="sequential-playlist">Поочередное воспроизведение</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group-row by2">
+                <div class="form-group">
+                    <label for="gap-slider">Отступ между видео: <span id="gap-value">0</span></label>
+                    <input type="range" id="gap-slider" name="gap-slider" min="0" max="5" value="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="radius-slider">Скругление углов: <span id="radius-value">0</span></label>
+                    <input type="range" id="radius-slider" name="radius-slider" min="0" max="50" value="0" step="0.1">
+                </div>
+            </div>
+            <div class="form-group-row by2">
+                <div class="form-group">
+                    <label for="border-width-slider">Толщина рамки: <span id="border-width-value">0</span></label>
+                    <input type="range" id="border-width-slider" name="border-width-slider" min="0" max="5" value="0" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label for="border-color-input">Цвет рамки:</label>
+                    <input type="color" id="border-color-input" value="#000000">
+                </div>
+            </div>
+            <div class="form-group form-group-last">
+                <label class="flex-label">
+                    <input type="checkbox" id="use-video-bg-checkbox">
+                    <span>Цвет фона области видео</span>
+                </label>
+                <input type="color" id="video-bg-color-input" value="#000000">
+            </div>
+        </fieldset>
+
+        <!-- Здесь будут другие разделы настроек -->
+        <fieldset>
+            <legend>Логотип</legend>
+
+            <input type="hidden" id="logo-file-name" name="logo-file-name" value="">
+
+            <div class="form-group form-group-last">
+                <label for="logo-file" class="custom-file-btn">Выберите файл логотипа</label>
+                <input type="file" id="logo-file" name="logo-file" accept="image/*" style="display: none;">
+                <div id="logo-preview-container">
+                    <!-- Пре-просмотр, имя файла и кнопка удаления будут сгенерированы JS -->
+                </div>
+            </div>
+
+            <div id="logo-controls" style="display: none;">
+                <div class="form-group form-group-top">
+                    <label>Позиция на экране:</label>
+                    <div id="logo-position-grid">
+                        <input type="radio" name="logo-position" value="top-left">
+                        <input type="radio" name="logo-position" value="top-center">
+                        <input type="radio" name="logo-position" value="top-right">
+                        <input type="radio" name="logo-position" value="center-left">
+                        <input type="radio" name="logo-position" value="center" checked>
+                        <input type="radio" name="logo-position" value="center-right">
+                        <input type="radio" name="logo-position" value="bottom-left">
+                        <input type="radio" name="logo-position" value="bottom-center">
+                        <input type="radio" name="logo-position" value="bottom-right">
+                    </div>
+                </div>
+                <div class="form-group-row by3">
+                    <div class="form-group">
+                        <label for="logo-size-slider">Размер: <span id="logo-size-value">20</span></label>
+                        <input type="range" id="logo-size-slider" min="0" max="50" value="20" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="logo-padding-slider">Внутренние отступы: <span id="logo-padding-value">0</span></label>
+                        <input type="range" id="logo-padding-slider" min="0" max="25" value="0" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="logo-margin-slider">Отступы от края экрана: <span id="logo-margin-value">1</span></label>
+                        <input type="range" id="logo-margin-slider" min="0" max="20" value="1" step="0.1">
+                    </div>
+                </div>
+                <div class="form-group-row by2">
+                    <div class="form-group">
+                        <label for="logo-bg-opacity-slider">Прозрачность фона (%): <span id="logo-bg-opacity-value">0</span></label>
+                        <input type="range" id="logo-bg-opacity-slider" min="0" max="100" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="logo-bg-color">Цвет фона:</label>
+                        <input type="color" id="logo-bg-color" value="#000000">
+                    </div>
+                </div>
+                <div class="form-group-row by2">
+                    <div class="form-group form-group-last">
+                        <label for="logo-blur-slider">Размытие фона: <span id="logo-blur-value">0</span></label>
+                        <input type="range" id="logo-blur-slider" min="0" max="2" value="0" step="0.05">
+                    </div>
+                    <div class="form-group form-group-last">
+                        <label for="logo-radius-slider">Скругление углов: <span id="logo-radius-value">0</span></label>
+                        <input type="range" id="logo-radius-slider" min="0" max="50" value="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Бегущая строка</legend>
+
+            <label class="flex-label form-group form-group-last">
+                <input type="checkbox" id="marquee-enable-checkbox">
+                <span>Включить бегущую строку</span>
+            </label>
+
+            <div id="marquee-controls" style="display: none;">
+                <div class="form-group form-group-top">
+                    <label for="marquee-text-input">Текст:</label>
+                    <input type="text" id="marquee-text-input" value="Это пример бегущей строки. Вы можете изменить этот текст в настройках.">
+                </div>
+                <div class="form-group-row by2">
+                    <div class="form-group">
+                        <label for="marquee-speed-slider">Скорость (длительность анимации в сек): <span id="marquee-speed-value">20</span></label>
+                        <input type="range" id="marquee-speed-slider" min="5" max="60" value="20" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-spacing-slider">Отступ между повторениями текста: <span id="marquee-spacing-value">10</span></label>
+                        <input type="range" id="marquee-spacing-slider" min="0" max="100" value="10" step="1">
+                    </div>
+                </div>
+                <div class="form-group-row by2">
+                    <div class="form-group">
+                        <label>Позиция:</label>
+                        <div id="marquee-position-group">
+                            <label class="flex-label"><input type="radio" name="marquee-position" value="top" checked> Верх</label>
+                            <label class="flex-label"><input type="radio" name="marquee-position" value="bottom"> Низ</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-margin-x-slider">Горизонтальный отступ: <span id="marquee-margin-x-value">0</span></label>
+                        <input type="range" id="marquee-margin-x-slider" min="0" max="10" value="0" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-margin-y-slider">Вертикальный отступ: <span id="marquee-margin-y-value">0</span></label>
+                        <input type="range" id="marquee-margin-y-slider" min="0" max="10" value="0" step="0.1">
+                    </div>
+                </div>
+                <div class="form-group-row by3">
+                    <div class="form-group">
+                        <label for="marquee-font-family-select">Шрифт:</label>
+                        <select id="marquee-font-family-select" name="marquee-font-family-select">
+                            <optgroup label="Без засечек">
+                                <option value="Arial, Helvetica, sans-serif" selected>Arial</option>
+                                <option value="Verdana, Geneva, sans-serif">Verdana</option>
+                                <option value="Tahoma, Geneva, sans-serif">Tahoma</option>
+                                <option value="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif">Trebuchet MS</option>
+                            </optgroup>
+                            <optgroup label="С засечками">
+                                <option value="'Times New Roman', Times, serif">Times New Roman</option>
+                                <option value="Georgia, serif">Georgia</option>
+                                <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
+                            </optgroup>
+                            <optgroup label="Моноширинные">
+                                <option value="'Courier New', Courier, monospace">Courier New</option>
+                                <option value="'Lucida Console', Monaco, monospace">Lucida Console</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-font-size-slider">Размер шрифта: <span id="marquee-font-size-value">4</span></label>
+                        <input type="range" id="marquee-font-size-slider" min="1" max="20" value="4" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-font-color">Цвет текста:</label>
+                        <input type="color" id="marquee-font-color" value="#ffffff">
+                    </div>
+                </div>
+                <div class="form-group-row by3"> 
+                    <div class="form-group">
+                        <label>Стиль шрифта:</label>
+                        <div style="display: flex; gap: 1dvw;">
+                            <label class="flex-label"><input type="checkbox" id="marquee-font-bold"><span>Жирный</span></label>
+                            <label class="flex-label"><input type="checkbox" id="marquee-font-italic"><span>Курсив</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label id="marquee-bg-opacity-slider-label" for="marquee-bg-opacity-slider">Прозрачность фона (%): <span id="marquee-bg-opacity-value">50</span></label>
+                        <input type="range" id="marquee-bg-opacity-slider" min="0" max="100" value="50">
+                    </div>
+                    <div class="form-group">
+                        <label for="marquee-bg-color">Цвет фона:</label>
+                        <input type="color" id="marquee-bg-color" value="#000000">
+                    </div> 
+                </div>
+                <div class="form-group-row by2">
+                    <div class="form-group form-group-last">
+                        <label for="marquee-blur-slider">Размытие фона: <span id="marquee-blur-value">0</span></label>
+                        <input type="range" id="marquee-blur-slider" min="0" max="2" value="0" step="0.05">
+                    </div>
+                    <div class="form-group form-group-last">
+                        <label for="marquee-radius-slider">Скругление углов: <span id="marquee-radius-value">0</span></label>
+                        <input type="range" id="marquee-radius-slider" min="0" max="10" value="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+        <p style="margin: 1dvw 0 0; font-size: 1dvw;">Made with ❤️ by <a href="https://tsymbal.su" target="_blank" style="color: inherit;">tsymbal.su</a>.</p>
+
+    </div>
+
+    <script>
+        // Весь JS-код будет здесь, без внешних библиотек.
+        document.addEventListener('DOMContentLoaded', () => {
+            // Получаем все необходимые элементы DOM
+            const settingsPanel = document.getElementById('settings-panel');
+            const body = document.body;
+            const gapSlider = document.getElementById('gap-slider');
+            const gapValue = document.getElementById('gap-value');
+            const radiusSlider = document.getElementById('radius-slider');
+            const radiusValue = document.getElementById('radius-value');
+            const videoContainer = document.getElementById('video-container');
+            const gridSelect = document.getElementById('grid-select');
+            const videoFilesInput = document.getElementById('video-files');
+            const playbackModeSelect = document.getElementById('playback-mode-select');
+            const playlistContainer = document.getElementById('playlist-container');
+            const useVideoBgCheckbox = document.getElementById('use-video-bg-checkbox');
+            const videoBgColorInput = document.getElementById('video-bg-color-input');
+            const borderWidthSlider = document.getElementById('border-width-slider');
+            const borderWidthValue = document.getElementById('border-width-value');
+            const borderColorInput = document.getElementById('border-color-input');
+            const logoContainer = document.getElementById('logo-container');
+            const logoFileName = document.getElementById('logo-file-name');
+            const logoFileInput = document.getElementById('logo-file');
+            const logoPreviewContainer = document.getElementById('logo-preview-container');
+            const logoControls = document.getElementById('logo-controls');
+            const logoSizeSlider = document.getElementById('logo-size-slider');
+            const logoSizeValue = document.getElementById('logo-size-value');
+            const logoPaddingSlider = document.getElementById('logo-padding-slider');
+            const logoPaddingValue = document.getElementById('logo-padding-value');
+            const logoRadiusSlider = document.getElementById('logo-radius-slider');
+            const logoRadiusValue = document.getElementById('logo-radius-value');
+            const logoBgColorInput = document.getElementById('logo-bg-color');
+            const logoBgOpacitySlider = document.getElementById('logo-bg-opacity-slider');
+            const logoBgOpacityValue = document.getElementById('logo-bg-opacity-value');
+            const logoPositionRadios = document.querySelectorAll('input[name="logo-position"]');
+            const logoMarginSlider = document.getElementById('logo-margin-slider');
+            const logoMarginValue = document.getElementById('logo-margin-value');
+            const logoBlurSlider = document.getElementById('logo-blur-slider');
+            const logoBlurValue = document.getElementById('logo-blur-value');
+            const marqueeContainer = document.getElementById('marquee-container');
+            const marqueeEnableCheckbox = document.getElementById('marquee-enable-checkbox');
+            const marqueeControls = document.getElementById('marquee-controls');
+            const marqueeTextInput = document.getElementById('marquee-text-input');
+            const marqueeFontFamilySelect = document.getElementById('marquee-font-family-select');
+            const marqueeFontBoldCheckbox = document.getElementById('marquee-font-bold');
+            const marqueeFontItalicCheckbox = document.getElementById('marquee-font-italic');
+            const marqueePositionRadios = document.querySelectorAll('input[name="marquee-position"]');
+            const marqueeFontSizeSlider = document.getElementById('marquee-font-size-slider');
+            const marqueeFontSizeValue = document.getElementById('marquee-font-size-value');
+            const marqueeSpeedSlider = document.getElementById('marquee-speed-slider');
+            const marqueeSpeedValue = document.getElementById('marquee-speed-value');
+            const marqueeSpacingSlider = document.getElementById('marquee-spacing-slider');
+            const marqueeSpacingValue = document.getElementById('marquee-spacing-value');
+            const marqueeMarginXSlider = document.getElementById('marquee-margin-x-slider');
+            const marqueeMarginXValue = document.getElementById('marquee-margin-x-value');
+            const marqueeMarginYSlider = document.getElementById('marquee-margin-y-slider');
+            const marqueeMarginYValue = document.getElementById('marquee-margin-y-value');
+            const marqueeRadiusSlider = document.getElementById('marquee-radius-slider');
+            const marqueeRadiusValue = document.getElementById('marquee-radius-value');
+            const marqueeBlurSlider = document.getElementById('marquee-blur-slider');
+            const marqueeBlurValue = document.getElementById('marquee-blur-value');
+            const marqueeFontColorInput = document.getElementById('marquee-font-color');
+            const marqueeBgColorInput = document.getElementById('marquee-bg-color');
+            const marqueeBgOpacitySlider = document.getElementById('marquee-bg-opacity-slider');
+            const marqueeBgOpacityValue = document.getElementById('marquee-bg-opacity-value');
+            const saveSettingsBtn = document.getElementById('save-settings-btn');
+            const loadSettingsBtn = document.getElementById('load-settings-btn');
+            const loadSettingsInput = document.getElementById('load-settings-input');
+
+            let playlist = []; // Array of { file: File, url: string }
+            let marqueeAnimationId = null; // Для ID анимации бегущей строки
+            let marqueeOffset = 0; // Для смещения бегущей строки
+
+            // Логика скрытия/отображения панели настроек
+            settingsPanel.addEventListener('mouseleave', () => {
+                settingsPanel.style.transform = 'translateX(calc(-100% - 2dvw))';
+            });
+
+            body.addEventListener('mousemove', (event) => {
+                // Показываем панель, если курсор находится у левого края (в пределах 2dvw)
+                const triggerZone = 2 * window.innerWidth / 100;
+                if (event.clientX < triggerZone) {
+                    settingsPanel.style.transform = 'translateX(0)';
+                }
+            });
+
+            // --- Вспомогательная функция для конвертации HEX в RGB ---
+            function hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16)
+                } : null;
+            }
+
+            // --- NEW: Handler for sequential playback when a video ends ---
+            function handleSequentialPlayback(event) {
+                const video = event.target;
+                if (playlist.length === 0) return;
+
+                const currentIndex = parseInt(video.dataset.playlistIndex, 10);
+                const nextIndex = (currentIndex + 1) % playlist.length;
+
+                video.src = playlist[nextIndex].file.name;
+                video.dataset.playlistIndex = nextIndex;
+                video.play().catch(e => console.error("Sequential playback failed to start:", e));
+
+                updatePlaybackStatus();
+            }
+
+            // --- NEW: Function to update playback status indicators in the playlist ---
+            function updatePlaybackStatus() {
+                // 1. Clear all previous statuses
+                document.querySelectorAll('#playlist-container .playlist-item-status').forEach(el => el.textContent = '');
+
+                // 2. Map which video filename is playing in which cell(s)
+                const playbackMap = new Map(); // Map<filename, playerNumbers[]>
+                const videoElements = videoContainer.querySelectorAll('video');
+                videoElements.forEach((video, playerIndex) => {
+                    if (!video.src) return; // Skip if src is not set
+                    // video.src is a full URI like "file:///.../My%20Video.mp4". We decode it and check if it ends with a filename.
+                    const playingItem = playlist.find(item => decodeURI(video.src).endsWith(item.file.name));
+                    if (playingItem) {
+                        const filename = playingItem.file.name;
+                        if (!playbackMap.has(filename)) {
+                            playbackMap.set(filename, []);
+                        }
+                        playbackMap.get(filename).push(playerIndex + 1);
+                    }
+                });
+
+                // 3. Update the playlist UI
+                playlist.forEach((item, playlistIndex) => {
+                    if (playbackMap.has(item.file.name)) {
+                        const playerNumbers = playbackMap.get(item.file.name).join(', ');
+                        const statusElement = document.querySelector(`.playlist-item[data-index="${playlistIndex}"] .playlist-item-status`);
+                        if (statusElement) {
+                            statusElement.textContent = `▶ ${playerNumbers}`;
+                        }
+                    }
+                });
+            }
+
+            // --- NEW: Function to render the playlist in the UI ---
+            function renderPlaylist() {
+                playlistContainer.innerHTML = '';
+                if (playlist.length === 0) {
+                    playlistContainer.innerHTML = '<p style="text-align: center; color: grey; margin: 1dvw 0;">Файлы не выбраны</p>';
+                    return;
+                }
+
+                playlist.forEach((item, index) => {
+                    const playlistItem = document.createElement('div');
+                    playlistItem.className = 'playlist-item';
+                    playlistItem.dataset.index = index;
+                    playlistItem.draggable = true;
+                    
+                    playlistItem.innerHTML = `
+                        <span class="playlist-item-status"></span>
+                        <span class="playlist-item-name" title="${item.file.name}">${item.file.name}</span>
+                        <button class="playlist-delete-btn" title="Удалить из плейлиста">&times;</button>
+                    `;
+                    playlistContainer.appendChild(playlistItem);
+                });
+            }
+
+            // --- Основная функция для обновления сетки видео ---
+            function updateVideoGrid() {
+                const currentVideoURLs = playlist.map(item => item.file.name);
+
+                const [cols, rows] = gridSelect.value.split('x').map(Number);
+                const gap = gapSlider.value;
+                const playbackMode = playbackModeSelect.value;
+                const radius = radiusSlider.value;
+                const useBgColor = useVideoBgCheckbox.checked;
+                const bgColor = videoBgColorInput.value;
+                const borderWidth = borderWidthSlider.value;
+                const borderColor = borderColorInput.value;
+
+                // 3. Очищаем контейнер и настраиваем сетку
+                videoContainer.innerHTML = '';
+                videoContainer.style.backgroundColor = useBgColor ? bgColor : 'transparent';
+                videoContainer.style.display = 'grid';
+                videoContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                videoContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+                videoContainer.style.gap = `${gap}dvw`;
+                videoContainer.style.padding = `${gap}dvw`; // Отступ по краям равен отступу между видео
+
+                // 4. Создаем и добавляем ячейки с видео
+                const totalCells = cols * rows;
+                for (let i = 0; i < totalCells; i++) {
+                    const cell = document.createElement('div');
+                    cell.style.backgroundColor = 'transparent';
+                    cell.style.borderStyle = 'solid';
+                    cell.style.borderWidth = `${borderWidth}dvw`;
+                    cell.style.borderColor = borderColor;
+                    cell.style.borderRadius = `${radius}dvw`;
+                    cell.style.backgroundColor = borderWidth <= 0 ? 'transparent' : borderColor;
+                    cell.style.boxShadow = 'inset 0 0 0.2dvw 0 #808080';
+                    cell.style.overflow = 'hidden'; // Важно для скругления углов видео
+
+                    if (currentVideoURLs.length > 0) {
+                        const initialPlaylistIndex = i % currentVideoURLs.length;
+
+                        const video = document.createElement('video');
+                        video.src = currentVideoURLs[initialPlaylistIndex];
+                        video.autoplay = true;
+                        video.muted = true; // Автовоспроизведение требует отключения звука
+                        video.playsInline = true; // Для корректной работы на iOS
+                        video.style.width = '100%';
+                        video.style.height = '100%';
+                        video.style.objectFit = 'cover'; // Заполняет ячейку без искажения пропорций
+
+                        if (playbackMode === 'sequential-playlist') {
+                            video.loop = false;
+                            video.dataset.playlistIndex = initialPlaylistIndex;
+                            video.addEventListener('ended', handleSequentialPlayback);
+                        } else { // fixed-video (default)
+                            video.loop = true;
+                        }
+
+                        cell.appendChild(video);
+                    }
+                    videoContainer.appendChild(cell);
+                }
+
+                updatePlaybackStatus();
+            }
+
+            // --- Функция для обновления логотипа ---
+            function updateLogo() {
+                const logoName = logoFileName.value;
+
+                if (!logoName) {
+                    logoContainer.style.display = 'none';
+                    logoPreviewContainer.style.display = 'none';
+                    logoControls.style.display = 'none';
+                    logoPreviewContainer.innerHTML = '';
+                    logoContainer.innerHTML = '';
+                    return;
+                }
+
+                // A logo is specified, show controls and preview area
+                logoControls.style.display = 'block';
+                logoPreviewContainer.style.display = 'block';
+
+                logoPreviewContainer.innerHTML = `
+                    <div class="playlist-item">
+                        <span class="playlist-item-status"><img src="${logoName}" alt="Эскиз логотипа"></span>
+                        <span class="playlist-item-name" title="${logoName}">${logoName}</span>
+                        <button class="playlist-delete-btn" id="remove-logo-btn" title="Удалить логотип">&times;</button>
+                    </div>
+                `;
+                
+                // Add event listener for the (newly created) remove button
+                document.getElementById('remove-logo-btn').addEventListener('click', () => {
+                    logoFileInput.value = '';
+                    logoFileName.value = '';
+                    updateLogo();
+                });
+
+                // Считываем все настройки
+                const selectedPosition = document.querySelector('input[name="logo-position"]:checked').value;
+                const size = logoSizeSlider.value;
+                const padding = logoPaddingSlider.value;
+                const radius = logoRadiusSlider.value;
+                const margin = logoMarginSlider.value;
+                const blur = logoBlurSlider.value;
+                const bgColor = hexToRgb(logoBgColorInput.value);
+                const bgOpacity = logoBgOpacitySlider.value / 100;
+
+                // Определяем стили для каждой позиции
+                const positionStyles = {
+                    'top-left': { top: `${margin}dvw`, left: `${margin}dvw`, transform: 'translate(0, 0)' },
+                    'top-center': { top: `${margin}dvw`, left: '50%', transform: 'translateX(-50%)' },
+                    'top-right': { top: `${margin}dvw`, left: `calc(100% - ${margin}dvw)`, transform: 'translateX(-100%)' },
+                    'center-left': { top: '50%', left: `${margin}dvw`, transform: 'translateY(-50%)' },
+                    'center': { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' },
+                    'center-right': { top: '50%', left: `calc(100% - ${margin}dvw)`, transform: 'translate(-100%, -50%)' },
+                    'bottom-left': { top: `calc(100% - ${margin}dvw)`, left: `${margin}dvw`, transform: 'translateY(-100%)' },
+                    'bottom-center': { top: `calc(100% - ${margin}dvw)`, left: '50%', transform: 'translate(-50%, -100%)' },
+                    'bottom-right': { top: `calc(100% - ${margin}dvw)`, left: `calc(100% - ${margin}dvw)`, transform: 'translate(-100%, -100%)' }
+                };
+                const newPos = positionStyles[selectedPosition];
+                logoContainer.style.top = newPos.top;
+                logoContainer.style.left = newPos.left;
+                logoContainer.style.transform = newPos.transform;
+
+                // Применяем стили к основному контейнеру логотипа
+                logoContainer.style.width = `${size}dvw`;
+                logoContainer.style.height = `${size}dvw`;
+                logoContainer.style.padding = `${padding}dvw`;
+                logoContainer.style.borderRadius = `${radius}dvw`;
+                logoContainer.style.backgroundColor = bgColor ? `rgba(${bgColor.r}, ${bgColor.g}, ${bgColor.b}, ${bgOpacity})` : 'transparent';
+                logoContainer.style.backdropFilter = `blur(${blur}dvw)`;
+
+                logoContainer.style.display = 'block';
+                logoContainer.innerHTML = `<img src="${logoName}" style="width: 100%; height: 100%; object-fit: contain;">`;
+            }
+
+            // --- Функция для анимации бегущей строки ---
+            function animateMarquee() {
+                const contentWrapper = marqueeContainer.querySelector('div');
+                // Проверяем, есть ли контент для анимации
+                if (!contentWrapper || !contentWrapper.firstChild) {
+                    marqueeAnimationId = requestAnimationFrame(animateMarquee);
+                    return;
+                }
+
+                // Скорость зависит от ползунка: чем больше значение, тем медленнее
+                const sliderValue = parseFloat(marqueeSpeedSlider.value);
+                // Формула для преобразования "длительности" в пиксели за кадр.
+                // Подбираем коэффициенты для комфортной скорости.
+                const speed = (65 - sliderValue) / 15; // 65 - (5..60) -> (60..5) / 15 -> (4..0.33) px/frame
+                marqueeOffset -= speed;
+
+                const firstSpan = contentWrapper.firstChild;
+                const spanWidth = firstSpan.offsetWidth;
+
+                // Если первый элемент полностью ушел за левый край
+                if (spanWidth > 0 && Math.abs(marqueeOffset) >= spanWidth) {
+                    marqueeOffset += spanWidth; // Корректируем смещение, чтобы не было скачка
+                    contentWrapper.appendChild(firstSpan); // Перемещаем первый элемент в конец
+                }
+
+                contentWrapper.style.transform = `translateX(${marqueeOffset}px)`;
+
+                marqueeAnimationId = requestAnimationFrame(animateMarquee);
+            }
+
+            // --- Функция для обновления бегущей строки ---
+            function updateMarquee() {
+                // Останавливаем предыдущую анимацию
+                if (marqueeAnimationId) {
+                    cancelAnimationFrame(marqueeAnimationId);
+                    marqueeAnimationId = null;
+                }
+                marqueeOffset = 0; // Сбрасываем смещение
+
+                const isEnabled = marqueeEnableCheckbox.checked;
+
+                marqueeControls.style.display = isEnabled ? 'block' : 'none';
+                marqueeContainer.style.display = isEnabled ? 'block' : 'none';
+
+                if (!isEnabled) {
+                    marqueeContainer.innerHTML = ''; // Очищаем, если выключено
+                    return;
+                }
+
+                // Считываем все настройки
+                const text = marqueeTextInput.value;
+                const fontFamily = marqueeFontFamilySelect.value;
+                const isBold = marqueeFontBoldCheckbox.checked;
+                const isItalic = marqueeFontItalicCheckbox.checked;
+                const position = document.querySelector('input[name="marquee-position"]:checked').value;
+                const fontSize = marqueeFontSizeSlider.value;
+                const marginX = marqueeMarginXSlider.value;
+                const marginY = marqueeMarginYSlider.value;
+                const radius = marqueeRadiusSlider.value;
+                const blur = marqueeBlurSlider.value;
+                const spacingValue = parseInt(marqueeSpacingSlider.value, 10);
+                const fontColor = marqueeFontColorInput.value;
+                const bgColor = hexToRgb(marqueeBgColorInput.value);
+                const bgOpacity = marqueeBgOpacitySlider.value / 100;
+
+                // Применяем стили к контейнеру
+                Object.assign(marqueeContainer.style, {
+                    top: position === 'top' ? `${marginY}dvw` : 'auto',
+                    bottom: position === 'bottom' ? `${marginY}dvw` : 'auto',
+                    left: `${marginX}dvw`,
+                    width: `calc(100% - ${marginX * 2}dvw)`,
+                    borderRadius: `${radius}dvw`,
+                    fontSize: `${fontSize}dvw`,
+                    backdropFilter: `blur(${blur}dvw)`,
+                    fontFamily: fontFamily,
+                    fontWeight: isBold ? 'bold' : 'normal',
+                    fontStyle: isItalic ? 'italic' : 'normal',
+                    color: fontColor,
+                    backgroundColor: bgColor ? `rgba(${bgColor.r}, ${bgColor.g}, ${bgColor.b}, ${bgOpacity})` : 'transparent'
+                });
+
+                // Создаем контент для анимации
+                marqueeContainer.innerHTML = ''; // Очищаем на всякий случай
+                const contentWrapper = document.createElement('div');
+                contentWrapper.style.whiteSpace = 'nowrap'; // Чтобы спаны не переносились
+
+                const spacing = '&nbsp;'.repeat(spacingValue);
+                const textToRepeat = text.trim() + spacing;
+
+                // Дублируем текст 4 раза в отдельных span
+                for (let i = 0; i < 4; i++) {
+                    const span = document.createElement('span');
+                    span.innerHTML = textToRepeat;
+                    contentWrapper.appendChild(span);
+                }
+                marqueeContainer.appendChild(contentWrapper);
+
+                // Запускаем новую анимацию
+                animateMarquee();
+            }
+
+            // --- Settings Management ---
+
+            function gatherAllSettings() {
+                const settings = {
+                    version: 1,
+                    video: {
+                        grid: gridSelect.value,
+                        playbackMode: playbackModeSelect.value,
+                        gap: gapSlider.value,
+                        radius: radiusSlider.value,
+                        useBg: useVideoBgCheckbox.checked,
+                        bgColor: videoBgColorInput.value,
+                        borderWidth: borderWidthSlider.value,
+                        borderColor: borderColorInput.value,
+                        playlistFileNames: playlist.map(item => item.file.name)
+                    },
+                    logo: {
+                        fileName: logoFileName.value || null,
+                        size: logoSizeSlider.value,
+                        padding: logoPaddingSlider.value,
+                        radius: logoRadiusSlider.value,
+                        position: document.querySelector('input[name="logo-position"]:checked').value,
+                        margin: logoMarginSlider.value,
+                        bgColor: logoBgColorInput.value,
+                        bgOpacity: logoBgOpacitySlider.value,
+                        blur: logoBlurSlider.value
+                    },
+                    marquee: {
+                        enabled: marqueeEnableCheckbox.checked,
+                        text: marqueeTextInput.value,
+                        fontFamily: marqueeFontFamilySelect.value,
+                        bold: marqueeFontBoldCheckbox.checked,
+                        italic: marqueeFontItalicCheckbox.checked,
+                        position: document.querySelector('input[name="marquee-position"]:checked').value,
+                        spacing: marqueeSpacingSlider.value,
+                        fontSize: marqueeFontSizeSlider.value,
+                        speed: marqueeSpeedSlider.value,
+                        marginX: marqueeMarginXSlider.value,
+                        marginY: marqueeMarginYSlider.value,
+                        radius: marqueeRadiusSlider.value,
+                        blur: marqueeBlurSlider.value,
+                        fontColor: marqueeFontColorInput.value,
+                        bgColor: marqueeBgColorInput.value,
+                        bgOpacity: marqueeBgOpacitySlider.value
+                    }
+                };
+                return settings;
+            }
+
+            function applyAllSettings(settings) {
+                try {
+                    // Video settings
+                    const vs = settings.video;
+                    gridSelect.value = vs.grid;
+                    playbackModeSelect.value = vs.playbackMode;
+                    gapSlider.value = vs.gap;
+                    gapValue.textContent = vs.gap;
+                    radiusSlider.value = vs.radius;
+                    radiusValue.textContent = vs.radius;
+                    useVideoBgCheckbox.checked = vs.useBg;
+                    videoBgColorInput.value = vs.bgColor;
+                    borderWidthSlider.value = vs.borderWidth || 0;
+                    borderWidthValue.textContent = vs.borderWidth || 0;
+                    borderColorInput.value = vs.borderColor || '#000000';
+
+                    // Rebuild playlist with file names (actual files need to be re-selected by user). No URLs needed.
+                    playlist = vs.playlistFileNames.map(name => ({ file: { name: name } }));
+
+                    // Logo settings
+                    const ls = settings.logo;
+                    logoFileName.value = ls.fileName || '';
+                    logoSizeSlider.value = ls.size;
+                    logoSizeValue.textContent = ls.size;
+                    logoPaddingSlider.value = ls.padding;
+                    logoPaddingValue.textContent = ls.padding;
+                    logoRadiusSlider.value = ls.radius;
+                    logoRadiusValue.textContent = ls.radius;
+                    document.querySelector(`input[name="logo-position"][value="${ls.position}"]`).checked = true;
+                    logoMarginSlider.value = ls.margin;
+                    logoMarginValue.textContent = ls.margin;
+                    logoBgColorInput.value = ls.bgColor;
+                    logoBgOpacitySlider.value = ls.bgOpacity;
+                    logoBgOpacityValue.textContent = ls.bgOpacity;
+                    logoBlurSlider.value = ls.blur;
+                    logoBlurValue.textContent = ls.blur;
+
+                    // Marquee settings
+                    const ms = settings.marquee;
+                    marqueeEnableCheckbox.checked = ms.enabled;
+                    marqueeTextInput.value = ms.text;
+                    marqueeFontFamilySelect.value = ms.fontFamily;
+                    marqueeFontBoldCheckbox.checked = ms.bold;
+                    marqueeFontItalicCheckbox.checked = ms.italic;
+                    document.querySelector(`input[name="marquee-position"][value="${ms.position}"]`).checked = true;
+                    marqueeSpacingSlider.value = ms.spacing;
+                    marqueeSpacingValue.textContent = ms.spacing;
+                    marqueeFontSizeSlider.value = ms.fontSize;
+                    marqueeFontSizeValue.textContent = ms.fontSize;
+                    marqueeSpeedSlider.value = ms.speed;
+                    marqueeSpeedValue.textContent = ms.speed;
+                    marqueeMarginXSlider.value = ms.marginX || 0;
+                    marqueeMarginXValue.textContent = ms.marginX || 0;
+                    marqueeMarginYSlider.value = ms.marginY || 0;
+                    marqueeMarginYValue.textContent = ms.marginY || 0;
+                    marqueeRadiusSlider.value = ms.radius;
+                    marqueeRadiusValue.textContent = ms.radius;
+                    marqueeBlurSlider.value = ms.blur;
+                    marqueeBlurValue.textContent = ms.blur;
+                    marqueeFontColorInput.value = ms.fontColor;
+                    marqueeBgColorInput.value = ms.bgColor;
+                    marqueeBgOpacitySlider.value = ms.bgOpacity;
+                    marqueeBgOpacityValue.textContent = ms.bgOpacity;
+
+                    // --- Trigger updates to apply all settings visually ---
+                    renderPlaylist();
+                    updateVideoGrid();
+                    updateLogo();
+                    updateMarquee();
+
+                    // Update visibility of controls based on loaded state
+                    videoBgColorInput.style.display = useVideoBgCheckbox.checked ? 'block' : 'none';
+
+                } catch (error) {
+                    console.error("Failed to apply settings:", error);
+                    alert("Не удалось применить настройки. Файл поврежден или имеет неверный формат.");
+                }
+            }
+
+            function saveSettingsToFile() {
+                const settings = gatherAllSettings();
+                const settingsString = JSON.stringify(settings, null, 2);
+                const blob = new Blob([settingsString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'settings.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            function loadSettingsFromFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const settings = JSON.parse(e.target.result);
+                    applyAllSettings(settings);
+                };
+                reader.readAsText(file);
+                loadSettingsInput.value = ''; // Reset for next load
+            }
+
+            // --- Назначаем обработчики событий ---
+            // Видео
+            videoFilesInput.addEventListener('change', () => {
+                // 1. Create new playlist from selected files (no URLs needed)
+                playlist = Array.from(videoFilesInput.files).map(file => ({ file: file }));
+
+                // 2. Update UI
+                renderPlaylist();
+                updateVideoGrid();
+            });
+
+            playlistContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('playlist-delete-btn')) {
+                    const itemElement = event.target.closest('.playlist-item');
+                    const indexToDelete = parseInt(itemElement.dataset.index, 10);
+
+                    if (!isNaN(indexToDelete) && playlist[indexToDelete]) {
+                        playlist.splice(indexToDelete, 1);
+                        renderPlaylist();
+                        updateVideoGrid();
+                    }
+                }
+            });
+
+            // --- NEW: Drag-and-drop for playlist items ---
+            let draggedElement = null;
+
+            playlistContainer.addEventListener('dragstart', (event) => {
+                const target = event.target.closest('.playlist-item');
+                if (target) {
+                    draggedElement = target;
+                    event.dataTransfer.effectAllowed = 'move';
+                    // Add a class for visual feedback, with a slight delay to not affect the drag image
+                    setTimeout(() => {
+                        target.classList.add('dragging');
+                    }, 0);
+                }
+            });
+
+            playlistContainer.addEventListener('dragend', (event) => {
+                if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
+                }
+                draggedElement = null;
+            });
+
+            playlistContainer.addEventListener('dragover', (event) => {
+                event.preventDefault(); // Necessary to allow dropping
+            });
+
+            playlistContainer.addEventListener('drop', (event) => {
+                event.preventDefault();
+                const targetItem = event.target.closest('.playlist-item');
+                if (targetItem && draggedElement && targetItem !== draggedElement) {
+                    const startIndex = parseInt(draggedElement.dataset.index, 10);
+                    const targetIndex = parseInt(targetItem.dataset.index, 10);
+
+                    const [removedItem] = playlist.splice(startIndex, 1);
+                    playlist.splice(targetIndex, 0, removedItem);
+
+                    renderPlaylist();
+                    updateVideoGrid();
+                }
+            });
+
+            gridSelect.addEventListener('change', updateVideoGrid);
+            playbackModeSelect.addEventListener('change', updateVideoGrid);
+            gapSlider.addEventListener('input', (e) => { gapValue.textContent = e.target.value; updateVideoGrid(); });
+            radiusSlider.addEventListener('input', (e) => { radiusValue.textContent = e.target.value; updateVideoGrid(); });
+            useVideoBgCheckbox.addEventListener('change', () => {
+                videoBgColorInput.style.display = useVideoBgCheckbox.checked ? 'block' : 'none';
+                updateVideoGrid();
+            });
+            videoBgColorInput.addEventListener('input', updateVideoGrid);
+            borderWidthSlider.addEventListener('input', (e) => { borderWidthValue.textContent = e.target.value; updateVideoGrid(); });
+            borderColorInput.addEventListener('input', updateVideoGrid);
+
+            // Логотип
+            logoFileInput.addEventListener('change', () => {
+                const file = logoFileInput.files[0];
+                logoFileName.value = file ? file.name : '';
+                updateLogo();
+            });
+            logoSizeSlider.addEventListener('input', (e) => { logoSizeValue.textContent = e.target.value; updateLogo(); });
+            logoPaddingSlider.addEventListener('input', (e) => { logoPaddingValue.textContent = e.target.value; updateLogo(); });
+            logoRadiusSlider.addEventListener('input', (e) => { logoRadiusValue.textContent = e.target.value; updateLogo(); });
+            logoMarginSlider.addEventListener('input', (e) => { logoMarginValue.textContent = e.target.value; updateLogo(); });
+            logoBlurSlider.addEventListener('input', (e) => { logoBlurValue.textContent = e.target.value; updateLogo(); });
+            logoBgColorInput.addEventListener('input', updateLogo);
+            logoBgOpacitySlider.addEventListener('input', (e) => { logoBgOpacityValue.textContent = e.target.value; updateLogo(); });
+            logoPositionRadios.forEach(radio => radio.addEventListener('change', updateLogo));
+
+            // Бегущая строка
+            marqueeEnableCheckbox.addEventListener('change', updateMarquee);
+            marqueeTextInput.addEventListener('input', updateMarquee);
+            marqueeFontFamilySelect.addEventListener('change', updateMarquee);
+            marqueeFontBoldCheckbox.addEventListener('change', updateMarquee);
+            marqueeFontItalicCheckbox.addEventListener('change', updateMarquee);
+            marqueePositionRadios.forEach(radio => radio.addEventListener('change', updateMarquee));
+            marqueeFontSizeSlider.addEventListener('input', (e) => { marqueeFontSizeValue.textContent = e.target.value; updateMarquee(); });
+            marqueeSpeedSlider.addEventListener('input', (e) => { marqueeSpeedValue.textContent = e.target.value; updateMarquee(); });
+            marqueeMarginXSlider.addEventListener('input', (e) => { marqueeMarginXValue.textContent = e.target.value; updateMarquee(); });
+            marqueeMarginYSlider.addEventListener('input', (e) => { marqueeMarginYValue.textContent = e.target.value; updateMarquee(); });
+            marqueeRadiusSlider.addEventListener('input', (e) => { marqueeRadiusValue.textContent = e.target.value; updateMarquee(); });
+            marqueeBlurSlider.addEventListener('input', (e) => { marqueeBlurValue.textContent = e.target.value; updateMarquee(); });
+            marqueeSpacingSlider.addEventListener('input', (e) => { marqueeSpacingValue.textContent = e.target.value; updateMarquee(); });
+            marqueeFontColorInput.addEventListener('input', updateMarquee);
+            marqueeBgColorInput.addEventListener('input', updateMarquee);
+            marqueeBgOpacitySlider.addEventListener('input', (e) => { marqueeBgOpacityValue.textContent = e.target.value; updateMarquee(); });
+
+            // Управление
+            saveSettingsBtn.addEventListener('click', saveSettingsToFile);
+            loadSettingsBtn.addEventListener('click', () => loadSettingsInput.click());
+            loadSettingsInput.addEventListener('change', loadSettingsFromFile);
+
+            // Инициализация состояния контролов (на случай перезагрузки страницы с активным чекбоксом)
+            videoBgColorInput.style.display = useVideoBgCheckbox.checked ? 'block' : 'none';
+
+            // Первоначальный вызов для отрисовки сетки при загрузке страницы
+            renderPlaylist();
+            updateVideoGrid();
+            // Первоначальный вызов для установки состояния логотипа
+            updateLogo();
+            // Первоначальный вызов для установки состояния бегущей строки
+            updateMarquee();
+
+        });
+    </script>
+
+</body>
+</html>
