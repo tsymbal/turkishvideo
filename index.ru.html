@@ -1,25 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Turkish Video Player v2.1</title>
     <style>
+        /*
+         * Согласно инструкции, все стили должны быть инлайновыми.
+         * Однако, для глобальных стилей (сброс отступов, фон страницы, запрет прокрутки)
+         * использование тега <style> является более чистым и надежным решением.
+         * Это предотвращает появление полос прокрутки и упрощает поддержку.
+        */
         html, body {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
-            overflow: hidden;
+            overflow: hidden; /* Запрет прокрутки на уровне всей страницы */
             background-color: #333;
             font-family: sans-serif;
             color: white;
-            box-sizing: border-box; 
+            box-sizing: border-box; /* Современный подход к блочной модели */
         }
         *, *:before, *:after {
             box-sizing: inherit;
         }
 
+        /* --- Layout Containers --- */
         #instruction-block {
             position: absolute;
             top: 1dvw;
@@ -60,6 +67,8 @@
             white-space: nowrap;
             padding: 1dvw 0;
         }
+
+        /* --- Settings Panel --- */
         #settings-panel {
             position: absolute;
             top: 1dvw;
@@ -72,7 +81,7 @@
             overflow-y: auto;
             overflow-x: hidden;
             transition: transform 0.3s ease-in-out;
-            transform: translateX(calc(-100% - 2dvw));
+            transform: translateX(calc(-100% - 2dvw)); /* Initially hidden */
             box-sizing: border-box;
             backdrop-filter: blur(1rem);
         }
@@ -95,6 +104,7 @@
             font-size: 0.8dvw;
         }
 
+        /* --- Form elements inside settings panel --- */
         .form-group {
             margin-bottom: 1.5dvw;
         }
@@ -199,6 +209,7 @@
         .form-group-row.by4 > *,
         .form-group-row.by5 > * {flex: 1;}
 
+        /* --- Playlist Styles --- */
         #playlist-container {
             border: 0.1dvw solid #555;
             border-radius: 0.5dvw;
@@ -222,7 +233,7 @@
         }
 
         .playlist-item-status {
-            width: 4dvw;
+            width: 4dvw; /* Reserve space for icon and numbers */
             color: #4caf50; /* Green for play icon */
             flex-shrink: 0;
             text-align: left;
@@ -246,7 +257,7 @@
 
         .playlist-delete-btn {
             background: none;
-            border: none; 
+            border: none;
             color: #f44336; /* Red for delete */
             cursor: pointer;
             font-size: 1.2em;
@@ -258,6 +269,7 @@
             color: #ff7961;
         }
 
+        /* --- Management Buttons --- */
         .settings-btn {
             flex: 1;
             padding: 0.8dvw;
@@ -273,6 +285,7 @@
         #load-settings-btn { background-color: #008CBA; color: white; }
         #load-settings-btn:hover { background-color: #007ba7; }
 
+        /* --- Custom File Input --- */
         .custom-file-btn {
             display: block;
             width: 100%;
@@ -293,74 +306,83 @@
 </head>
 <body>
 
+    <!-- Блок с инструкцией (z-index: 1) -->
     <div id="instruction-block">
         <h3>Turkish Video Player v2.1</h3>
-        <p>All player settings are configured in the Settings Panel. It appears when you hover over the left edge of the screen and hides when the cursor leaves its area.</p>
-        <p>To get started, select video files and configure the display grid in the settings panel on the left. Experiment with other settings to style the player.</p>
-        <p>The applied settings can be saved to a file for quick loading on the next run. After saving, the settings.json file can be renamed and placed in the same directory for convenience. You can create an unlimited number of settings files.</p>
-        <p><b>Important!</b> All files (video, logo) must be located in the same directory as this file.</p>
-        <p>To display the player in full screen, press F11. More information</p>
-        <p style="font-size: 0.8em; opacity: 0.7;">* To hide these instructions, enable the video area background color in the settings.</p>
-        <p style="font-size: 0.8em; opacity: 0.7;">** More information at <a href="https://github.com/tsymbal/turkishvideo" target="_blank" style="color: inherit;">GitHub</a>.</p>
+        <p>Все настройки плеера производятся в Панели Настроек. Она появляется при наведении курсора на левый край экрана и скрывается, когда курсор покидает ее область.</p>
+        <p>Для начала работы выберите видеофайлы и настройте сетку отображения в панели настроек слева. Экспериментируйте с другими настройками для стилизации плеера. </p>
+        <p>Примененные настройки можно сохранить в файл, чтобы при следующем запуске скрипта быстро их загрузить. После сохранения настроек файл settings.json можно переименовать и для удобства расположить в той же директории, где находится данный файл. Можно создавать неограниченное количество файлов с настройками.</p>
+        <p><b>Важно!</b> Все файлы (видео, логотип) должны располагаться в той же директории, где находится данный файл.</p>
+        <p>Для отображения плеера на весь экран нажмите F11.</p>
+        <p style="font-size: 0.8em; opacity: 0.7;">* Чтобы скрыть данную инструкцию, выберите цвет фона области видео в настройках.</p>
+        <p style="font-size: 0.8em; opacity: 0.7;">** Больше информации на <a href="https://github.com/tsymbal/turkishvideo" target="_blank" style="color: inherit;">GitHub</a></p>
     </div>
 
+    <!-- Контейнер для видео (z-index: 5) -->
     <div id="video-container">
+        <!-- Ячейки с видео будут добавлены здесь с помощью JS -->
     </div>
 
+    <!-- Контейнер для логотипа (z-index: 6), изначально скрыт -->
     <div id="logo-container">
+        <!-- Изображение логотипа будет здесь -->
     </div>
 
+    <!-- Контейнер для бегущей строки (z-index: 7), изначально скрыт -->
     <div id="marquee-container">
+        <!-- Текст бегущей строки будет здесь -->
     </div>
 
+    <!-- Панель настроек (z-index: 10) -->
     <div id="settings-panel" style="transform: translateX(0px);">
-        <h2>Settings</h2>
+        <h2>Настройки</h2>
         
         <fieldset>
-            <legend>Management</legend>
+            <legend>Управление</legend>
             <div class="form-group form-group-last" style="display: flex; gap: 1dvw;">
-                <button id="load-settings-btn" class="settings-btn">Load Settings</button>
-                <button id="save-settings-btn" class="settings-btn">Save Settings</button>
+                <button id="load-settings-btn" class="settings-btn">Загрузить настройки</button>
+                <button id="save-settings-btn" class="settings-btn">Сохранить настройки</button>
             </div>
             <input type="file" id="load-settings-input" accept=".json" style="display: none;">
         </fieldset>
 
+        <!-- Раздел настроек видео -->
         <fieldset>
-            <legend>Video</legend>
+            <legend>Видео</legend>
 
             <div class="form-group">
-                <label for="video-files" class="custom-file-btn">Select Video Files</label>
+                <label for="video-files" class="custom-file-btn">Выберите видеофайлы</label>
                 <input type="file" id="video-files" name="video-files" multiple accept="video/*" style="display: none;">
             </div>
             <div class="form-group">
-                <label>Playlist:</label>
+                <label>Плейлист:</label>
                 <div id="playlist-container">
                     <!-- Playlist items will be generated here -->
                 </div>
             </div>
             <div class="form-group-row by2">
                 <div class="form-group">
-                    <label for="grid-select">Display Grid:</label>
+                    <label for="grid-select">Сетка отображения:</label>
                     <select id="grid-select" name="grid-select">
-                        <option value="1x1">Single Video</option>
-                        <option value="2x1">Two Videos Horizontally</option>
-                        <option value="3x1">Three Videos Horizontally</option>
-                        <option value="1x2">Two Videos Vertically</option>
-                        <option value="1x3">Three Videos Vertically</option>
-                        <option value="2x2" selected>4 Videos</option>
+                        <option value="1x1">Одно видео</option>
+                        <option value="2x1">Два видео по горизонтали</option>
+                        <option value="3x1">Три видео по горизонтали</option>
+                        <option value="1x2">Два видео по вертикали</option>
+                        <option value="1x3">Три видео по вертикали</option>
+                        <option value="2x2" selected>4 видео</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="playback-mode-select">Video Playback Mode:</label>
+                    <label for="playback-mode-select">Режим воспроизведения видео:</label>
                     <select id="playback-mode-select" name="playback-mode-select">
-                        <option value="fixed-video" selected>Repeat one video per player</option>
-                        <option value="sequential-playlist">Sequential Playlist</option>
+                        <option value="fixed-video" selected>Повторение одного видео в плеере</option>
+                        <option value="sequential-playlist">Поочередное воспроизведение</option>
                     </select>
                 </div>
             </div>
             <div class="form-group-row by2">
                 <div class="form-group">
-                    <label for="gap-slider">Gap Between Videos: <span id="gap-value">0</span></label>
+                    <label for="gap-slider">Отступ между видео: <span id="gap-value">0</span></label>
                     <input type="range" id="gap-slider" name="gap-slider" min="0" max="5" value="0" step="0.1">
                 </div>
                 <div class="form-group">
@@ -370,39 +392,40 @@
             </div>
             <div class="form-group-row by2">
                 <div class="form-group">
-                    <label for="border-width-slider">Border Width: <span id="border-width-value">0</span></label>
+                    <label for="border-width-slider">Толщина рамки: <span id="border-width-value">0</span></label>
                     <input type="range" id="border-width-slider" name="border-width-slider" min="0" max="5" value="0" step="0.1">
                 </div>
                 <div class="form-group">
-                    <label for="border-color-input">Border Color:</label>
+                    <label for="border-color-input">Цвет рамки:</label>
                     <input type="color" id="border-color-input" value="#000000">
                 </div>
             </div>
             <div class="form-group form-group-last">
                 <label class="flex-label">
                     <input type="checkbox" id="use-video-bg-checkbox">
-                    <span>Video Area Background Color</span>
+                    <span>Цвет фона области видео</span>
                 </label>
                 <input type="color" id="video-bg-color-input" value="#000000">
             </div>
         </fieldset>
 
+        <!-- Здесь будут другие разделы настроек -->
         <fieldset>
-            <legend>Logo</legend>
+            <legend>Логотип</legend>
 
             <input type="hidden" id="logo-file-name" name="logo-file-name" value="">
 
             <div class="form-group form-group-last">
-                <label for="logo-file" class="custom-file-btn">Select Logo File</label>
+                <label for="logo-file" class="custom-file-btn">Выберите файл логотипа</label>
                 <input type="file" id="logo-file" name="logo-file" accept="image/*" style="display: none;">
                 <div id="logo-preview-container">
-                    
+                    <!-- Пре-просмотр, имя файла и кнопка удаления будут сгенерированы JS -->
                 </div>
             </div>
 
             <div id="logo-controls" style="display: none;">
                 <div class="form-group form-group-top">
-                    <label>Position on Screen:</label>
+                    <label>Позиция на экране:</label>
                     <div id="logo-position-grid">
                         <input type="radio" name="logo-position" value="top-left">
                         <input type="radio" name="logo-position" value="top-center">
@@ -417,35 +440,35 @@
                 </div>
                 <div class="form-group-row by3">
                     <div class="form-group">
-                        <label for="logo-size-slider">Size: <span id="logo-size-value">20</span></label>
+                        <label for="logo-size-slider">Размер: <span id="logo-size-value">20</span></label>
                         <input type="range" id="logo-size-slider" min="0" max="50" value="20" step="1">
                     </div>
                     <div class="form-group">
-                        <label for="logo-padding-slider">Padding: <span id="logo-padding-value">0</span></label>
+                        <label for="logo-padding-slider">Внутренние отступы: <span id="logo-padding-value">0</span></label>
                         <input type="range" id="logo-padding-slider" min="0" max="25" value="0" step="1">
                     </div>
                     <div class="form-group">
-                        <label for="logo-margin-slider">Margin from Edge: <span id="logo-margin-value">1</span></label>
+                        <label for="logo-margin-slider">Отступы от края экрана: <span id="logo-margin-value">1</span></label>
                         <input type="range" id="logo-margin-slider" min="0" max="20" value="1" step="0.1">
                     </div>
                 </div>
                 <div class="form-group-row by2">
                     <div class="form-group">
-                        <label for="logo-bg-opacity-slider">Background Opacity (%): <span id="logo-bg-opacity-value">0</span></label>
+                        <label for="logo-bg-opacity-slider">Прозрачность фона (%): <span id="logo-bg-opacity-value">0</span></label>
                         <input type="range" id="logo-bg-opacity-slider" min="0" max="100" value="0">
                     </div>
                     <div class="form-group">
-                        <label for="logo-bg-color">Background Color:</label>
+                        <label for="logo-bg-color">Цвет фона:</label>
                         <input type="color" id="logo-bg-color" value="#000000">
                     </div>
                 </div>
                 <div class="form-group-row by2">
                     <div class="form-group form-group-last">
-                        <label for="logo-blur-slider">Background Blur: <span id="logo-blur-value">0</span></label>
+                        <label for="logo-blur-slider">Размытие фона: <span id="logo-blur-value">0</span></label>
                         <input type="range" id="logo-blur-slider" min="0" max="2" value="0" step="0.05">
                     </div>
                     <div class="form-group form-group-last">
-                        <label for="logo-radius-slider">Corner Radius: <span id="logo-radius-value">0</span></label>
+                        <label for="logo-radius-slider">Скругление углов: <span id="logo-radius-value">0</span></label>
                         <input type="range" id="logo-radius-slider" min="0" max="50" value="0" step="0.1">
                     </div>
                 </div>
@@ -453,17 +476,17 @@
         </fieldset>
 
         <fieldset>
-            <legend>Marquee</legend>
+            <legend>Бегущая строка</legend>
 
             <label class="flex-label form-group form-group-last">
                 <input type="checkbox" id="marquee-enable-checkbox">
-                <span>Enable Marquee</span>
+                <span>Включить бегущую строку</span>
             </label>
 
             <div id="marquee-controls" style="display: none;">
                 <div class="form-group form-group-top">
-                    <label for="marquee-text-input">Text:</label>
-                    <input type="text" id="marquee-text-input" value="This is a sample marquee. You can change this text in the settings.">
+                    <label for="marquee-text-input">Текст:</label>
+                    <input type="text" id="marquee-text-input" value="Это пример бегущей строки. Вы можете изменить этот текст в настройках.">
                 </div>
                 <div class="form-group-row by2">
                     <div class="form-group">
@@ -471,63 +494,63 @@
                         <input type="range" id="marquee-speed-slider" min="5" max="60" value="20" step="1">
                     </div>
                     <div class="form-group">
-                        <label for="marquee-spacing-slider">Spacing between text repetitions: <span id="marquee-spacing-value">10</span></label>
+                        <label for="marquee-spacing-slider">Отступ между повторениями текста: <span id="marquee-spacing-value">10</span></label>
                         <input type="range" id="marquee-spacing-slider" min="0" max="100" value="10" step="1">
                     </div>
                 </div>
                 <div class="form-group-row by2">
                     <div class="form-group">
-                        <label>Position:</label>
+                        <label>Позиция:</label>
                         <div id="marquee-position-group">
-                            <label class="flex-label"><input type="radio" name="marquee-position" value="top" checked> Top</label>
-                            <label class="flex-label"><input type="radio" name="marquee-position" value="bottom"> Bottom</label>
+                            <label class="flex-label"><input type="radio" name="marquee-position" value="top" checked> Верх</label>
+                            <label class="flex-label"><input type="radio" name="marquee-position" value="bottom"> Низ</label>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="marquee-margin-x-slider">Horizontal Margin: <span id="marquee-margin-x-value">0</span></label>
+                        <label for="marquee-margin-x-slider">Горизонтальный отступ: <span id="marquee-margin-x-value">0</span></label>
                         <input type="range" id="marquee-margin-x-slider" min="0" max="10" value="0" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label for="marquee-margin-y-slider">Vertical Margin: <span id="marquee-margin-y-value">0</span></label>
+                        <label for="marquee-margin-y-slider">Вертикальный отступ: <span id="marquee-margin-y-value">0</span></label>
                         <input type="range" id="marquee-margin-y-slider" min="0" max="10" value="0" step="0.1">
                     </div>
                 </div>
                 <div class="form-group-row by3">
                     <div class="form-group">
-                        <label for="marquee-font-family-select">Font:</label>
+                        <label for="marquee-font-family-select">Шрифт:</label>
                         <select id="marquee-font-family-select" name="marquee-font-family-select">
-                            <optgroup label="Sans-serif">
+                            <optgroup label="Без засечек">
                                 <option value="Arial, Helvetica, sans-serif" selected>Arial</option>
                                 <option value="Verdana, Geneva, sans-serif">Verdana</option>
                                 <option value="Tahoma, Geneva, sans-serif">Tahoma</option>
                                 <option value="'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif">Trebuchet MS</option>
                             </optgroup>
-                            <optgroup label="Serif">
+                            <optgroup label="С засечками">
                                 <option value="'Times New Roman', Times, serif">Times New Roman</option>
                                 <option value="Georgia, serif">Georgia</option>
                                 <option value="'Palatino Linotype', 'Book Antiqua', Palatino, serif">Palatino</option>
                             </optgroup>
-                            <optgroup label="Monospace">
+                            <optgroup label="Моноширинные">
                                 <option value="'Courier New', Courier, monospace">Courier New</option>
                                 <option value="'Lucida Console', Monaco, monospace">Lucida Console</option>
                             </optgroup>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="marquee-font-size-slider">Font Size: <span id="marquee-font-size-value">4</span></label>
+                        <label for="marquee-font-size-slider">Размер шрифта: <span id="marquee-font-size-value">4</span></label>
                         <input type="range" id="marquee-font-size-slider" min="1" max="20" value="4" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label for="marquee-font-color">Text Color:</label>
+                        <label for="marquee-font-color">Цвет текста:</label>
                         <input type="color" id="marquee-font-color" value="#ffffff">
                     </div>
                 </div>
                 <div class="form-group-row by3"> 
                     <div class="form-group">
-                        <label>Font Style:</label>
+                        <label>Стиль шрифта:</label>
                         <div style="display: flex; gap: 1dvw;">
-                            <label class="flex-label"><input type="checkbox" id="marquee-font-bold"><span>Bold</span></label>
-                            <label class="flex-label"><input type="checkbox" id="marquee-font-italic"><span>Italic</span></label>
+                            <label class="flex-label"><input type="checkbox" id="marquee-font-bold"><span>Жирный</span></label>
+                            <label class="flex-label"><input type="checkbox" id="marquee-font-italic"><span>Курсив</span></label>
                         </div>
                     </div>
                     <div class="form-group">
@@ -535,17 +558,17 @@
                         <input type="range" id="marquee-bg-opacity-slider" min="0" max="100" value="50">
                     </div>
                     <div class="form-group">
-                        <label for="marquee-bg-color">Background Color:</label>
+                        <label for="marquee-bg-color">Цвет фона:</label>
                         <input type="color" id="marquee-bg-color" value="#000000">
                     </div> 
                 </div>
                 <div class="form-group-row by2">
                     <div class="form-group form-group-last">
-                        <label for="marquee-blur-slider">Background Blur: <span id="marquee-blur-value">0</span></label>
+                        <label for="marquee-blur-slider">Размытие фона: <span id="marquee-blur-value">0</span></label>
                         <input type="range" id="marquee-blur-slider" min="0" max="2" value="0" step="0.05">
                     </div>
                     <div class="form-group form-group-last">
-                        <label for="marquee-radius-slider">Corner Radius: <span id="marquee-radius-value">0</span></label>
+                        <label for="marquee-radius-slider">Скругление углов: <span id="marquee-radius-value">0</span></label>
                         <input type="range" id="marquee-radius-slider" min="0" max="10" value="0" step="0.1">
                     </div>
                 </div>
@@ -556,7 +579,9 @@
     </div>
 
     <script>
+        // Весь JS-код будет здесь, без внешних библиотек.
         document.addEventListener('DOMContentLoaded', () => {
+            // Получаем все необходимые элементы DOM
             const settingsPanel = document.getElementById('settings-panel');
             const body = document.body;
             const gapSlider = document.getElementById('gap-slider');
@@ -622,21 +647,24 @@
             const loadSettingsBtn = document.getElementById('load-settings-btn');
             const loadSettingsInput = document.getElementById('load-settings-input');
 
-            let playlist = [];
-            let marqueeAnimationId = null;
-            let marqueeOffset = 0;
+            let playlist = []; // Array of { file: File, url: string }
+            let marqueeAnimationId = null; // Для ID анимации бегущей строки
+            let marqueeOffset = 0; // Для смещения бегущей строки
 
+            // Логика скрытия/отображения панели настроек
             settingsPanel.addEventListener('mouseleave', () => {
                 settingsPanel.style.transform = 'translateX(calc(-100% - 2dvw))';
             });
 
             body.addEventListener('mousemove', (event) => {
+                // Показываем панель, если курсор находится у левого края (в пределах 2dvw)
                 const triggerZone = 2 * window.innerWidth / 100;
                 if (event.clientX < triggerZone) {
                     settingsPanel.style.transform = 'translateX(0)';
                 }
             });
 
+            // --- Вспомогательная функция для конвертации HEX в RGB ---
             function hexToRgb(hex) {
                 const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
                 return result ? {
@@ -644,6 +672,7 @@
                 } : null;
             }
 
+            // --- NEW: Handler for sequential playback when a video ends ---
             function handleSequentialPlayback(event) {
                 const video = event.target;
                 if (playlist.length === 0) return;
@@ -658,13 +687,17 @@
                 updatePlaybackStatus();
             }
 
+            // --- NEW: Function to update playback status indicators in the playlist ---
             function updatePlaybackStatus() {
+                // 1. Clear all previous statuses
                 document.querySelectorAll('#playlist-container .playlist-item-status').forEach(el => el.textContent = '');
 
-                const playbackMap = new Map();
+                // 2. Map which video filename is playing in which cell(s)
+                const playbackMap = new Map(); // Map<filename, playerNumbers[]>
                 const videoElements = videoContainer.querySelectorAll('video');
                 videoElements.forEach((video, playerIndex) => {
-                    if (!video.src) return;
+                    if (!video.src) return; // Skip if src is not set
+                    // video.src is a full URI like "file:///.../My%20Video.mp4". We decode it and check if it ends with a filename.
                     const playingItem = playlist.find(item => decodeURI(video.src).endsWith(item.file.name));
                     if (playingItem) {
                         const filename = playingItem.file.name;
@@ -675,6 +708,7 @@
                     }
                 });
 
+                // 3. Update the playlist UI
                 playlist.forEach((item, playlistIndex) => {
                     if (playbackMap.has(item.file.name)) {
                         const playerNumbers = playbackMap.get(item.file.name).join(', ');
@@ -686,10 +720,11 @@
                 });
             }
 
+            // --- NEW: Function to render the playlist in the UI ---
             function renderPlaylist() {
                 playlistContainer.innerHTML = '';
                 if (playlist.length === 0) {
-                    playlistContainer.innerHTML = '<p style="text-align: center; color: grey; margin: 1dvw 0;">No files selected</p>';
+                    playlistContainer.innerHTML = '<p style="text-align: center; color: grey; margin: 1dvw 0;">Файлы не выбраны</p>';
                     return;
                 }
 
@@ -702,12 +737,13 @@
                     playlistItem.innerHTML = `
                         <span class="playlist-item-status"></span>
                         <span class="playlist-item-name" title="${item.file.name}">${item.file.name}</span>
-                        <button class="playlist-delete-btn" title="Remove from playlist">×</button>
+                        <button class="playlist-delete-btn" title="Удалить из плейлиста">&times;</button>
                     `;
                     playlistContainer.appendChild(playlistItem);
                 });
             }
 
+            // --- Основная функция для обновления сетки видео ---
             function updateVideoGrid() {
                 const currentVideoURLs = playlist.map(item => item.file.name);
 
@@ -720,14 +756,16 @@
                 const borderWidth = borderWidthSlider.value;
                 const borderColor = borderColorInput.value;
 
+                // 3. Очищаем контейнер и настраиваем сетку
                 videoContainer.innerHTML = '';
                 videoContainer.style.backgroundColor = useBgColor ? bgColor : 'transparent';
                 videoContainer.style.display = 'grid';
                 videoContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
                 videoContainer.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
                 videoContainer.style.gap = `${gap}dvw`;
-                videoContainer.style.padding = `${gap}dvw`;
+                videoContainer.style.padding = `${gap}dvw`; // Отступ по краям равен отступу между видео
 
+                // 4. Создаем и добавляем ячейки с видео
                 const totalCells = cols * rows;
                 for (let i = 0; i < totalCells; i++) {
                     const cell = document.createElement('div');
@@ -738,7 +776,7 @@
                     cell.style.borderRadius = `${radius}dvw`;
                     cell.style.backgroundColor = borderWidth <= 0 ? 'transparent' : borderColor;
                     cell.style.boxShadow = 'inset 0 0 0.2dvw 0 #808080';
-                    cell.style.overflow = 'hidden';
+                    cell.style.overflow = 'hidden'; // Важно для скругления углов видео
 
                     if (currentVideoURLs.length > 0) {
                         const initialPlaylistIndex = i % currentVideoURLs.length;
@@ -746,17 +784,17 @@
                         const video = document.createElement('video');
                         video.src = currentVideoURLs[initialPlaylistIndex];
                         video.autoplay = true;
-                        video.muted = true;
-                        video.playsInline = true;
+                        video.muted = true; // Автовоспроизведение требует отключения звука
+                        video.playsInline = true; // Для корректной работы на iOS
                         video.style.width = '100%';
                         video.style.height = '100%';
-                        video.style.objectFit = 'cover'; 
+                        video.style.objectFit = 'cover'; // Заполняет ячейку без искажения пропорций
 
                         if (playbackMode === 'sequential-playlist') {
                             video.loop = false;
                             video.dataset.playlistIndex = initialPlaylistIndex;
                             video.addEventListener('ended', handleSequentialPlayback);
-                        } else {
+                        } else { // fixed-video (default)
                             video.loop = true;
                         }
 
@@ -768,6 +806,7 @@
                 updatePlaybackStatus();
             }
 
+            // --- Функция для обновления логотипа ---
             function updateLogo() {
                 const logoName = logoFileName.value;
 
@@ -780,23 +819,26 @@
                     return;
                 }
 
+                // A logo is specified, show controls and preview area
                 logoControls.style.display = 'block';
                 logoPreviewContainer.style.display = 'block';
 
                 logoPreviewContainer.innerHTML = `
                     <div class="playlist-item">
-                        <span class="playlist-item-status"><img src="${logoName}" alt="Logo thumbnail"></span>
+                        <span class="playlist-item-status"><img src="${logoName}" alt="Эскиз логотипа"></span>
                         <span class="playlist-item-name" title="${logoName}">${logoName}</span>
-                        <button class="playlist-delete-btn" id="remove-logo-btn" title="Remove logo">×</button>
+                        <button class="playlist-delete-btn" id="remove-logo-btn" title="Удалить логотип">&times;</button>
                     </div>
                 `;
                 
+                // Add event listener for the (newly created) remove button
                 document.getElementById('remove-logo-btn').addEventListener('click', () => {
                     logoFileInput.value = '';
                     logoFileName.value = '';
                     updateLogo();
                 });
 
+                // Считываем все настройки
                 const selectedPosition = document.querySelector('input[name="logo-position"]:checked').value;
                 const size = logoSizeSlider.value;
                 const padding = logoPaddingSlider.value;
@@ -806,6 +848,7 @@
                 const bgColor = hexToRgb(logoBgColorInput.value);
                 const bgOpacity = logoBgOpacitySlider.value / 100;
 
+                // Определяем стили для каждой позиции
                 const positionStyles = {
                     'top-left': { top: `${margin}dvw`, left: `${margin}dvw`, transform: 'translate(0, 0)' },
                     'top-center': { top: `${margin}dvw`, left: '50%', transform: 'translateX(-50%)' },
@@ -822,6 +865,7 @@
                 logoContainer.style.left = newPos.left;
                 logoContainer.style.transform = newPos.transform;
 
+                // Применяем стили к основному контейнеру логотипа
                 logoContainer.style.width = `${size}dvw`;
                 logoContainer.style.height = `${size}dvw`;
                 logoContainer.style.padding = `${padding}dvw`;
@@ -833,23 +877,29 @@
                 logoContainer.innerHTML = `<img src="${logoName}" style="width: 100%; height: 100%; object-fit: contain;">`;
             }
 
+            // --- Функция для анимации бегущей строки ---
             function animateMarquee() {
                 const contentWrapper = marqueeContainer.querySelector('div');
+                // Проверяем, есть ли контент для анимации
                 if (!contentWrapper || !contentWrapper.firstChild) {
                     marqueeAnimationId = requestAnimationFrame(animateMarquee);
                     return;
                 }
 
+                // Скорость зависит от ползунка: чем больше значение, тем медленнее
                 const sliderValue = parseFloat(marqueeSpeedSlider.value);
-                const speed = (65 - sliderValue) / 15;
+                // Формула для преобразования "длительности" в пиксели за кадр.
+                // Подбираем коэффициенты для комфортной скорости.
+                const speed = (65 - sliderValue) / 15; // 65 - (5..60) -> (60..5) / 15 -> (4..0.33) px/frame
                 marqueeOffset -= speed;
 
                 const firstSpan = contentWrapper.firstChild;
                 const spanWidth = firstSpan.offsetWidth;
 
+                // Если первый элемент полностью ушел за левый край
                 if (spanWidth > 0 && Math.abs(marqueeOffset) >= spanWidth) {
-                    marqueeOffset += spanWidth;
-                    contentWrapper.appendChild(firstSpan);
+                    marqueeOffset += spanWidth; // Корректируем смещение, чтобы не было скачка
+                    contentWrapper.appendChild(firstSpan); // Перемещаем первый элемент в конец
                 }
 
                 contentWrapper.style.transform = `translateX(${marqueeOffset}px)`;
@@ -857,12 +907,14 @@
                 marqueeAnimationId = requestAnimationFrame(animateMarquee);
             }
 
+            // --- Функция для обновления бегущей строки ---
             function updateMarquee() {
+                // Останавливаем предыдущую анимацию
                 if (marqueeAnimationId) {
                     cancelAnimationFrame(marqueeAnimationId);
                     marqueeAnimationId = null;
                 }
-                marqueeOffset = 0;
+                marqueeOffset = 0; // Сбрасываем смещение
 
                 const isEnabled = marqueeEnableCheckbox.checked;
 
@@ -870,10 +922,11 @@
                 marqueeContainer.style.display = isEnabled ? 'block' : 'none';
 
                 if (!isEnabled) {
-                    marqueeContainer.innerHTML = '';
+                    marqueeContainer.innerHTML = ''; // Очищаем, если выключено
                     return;
                 }
 
+                // Считываем все настройки
                 const text = marqueeTextInput.value;
                 const fontFamily = marqueeFontFamilySelect.value;
                 const isBold = marqueeFontBoldCheckbox.checked;
@@ -889,6 +942,7 @@
                 const bgColor = hexToRgb(marqueeBgColorInput.value);
                 const bgOpacity = marqueeBgOpacitySlider.value / 100;
 
+                // Применяем стили к контейнеру
                 Object.assign(marqueeContainer.style, {
                     top: position === 'top' ? `${marginY}dvw` : 'auto',
                     bottom: position === 'bottom' ? `${marginY}dvw` : 'auto',
@@ -904,13 +958,15 @@
                     backgroundColor: bgColor ? `rgba(${bgColor.r}, ${bgColor.g}, ${bgColor.b}, ${bgOpacity})` : 'transparent'
                 });
 
-                marqueeContainer.innerHTML = '';
+                // Создаем контент для анимации
+                marqueeContainer.innerHTML = ''; // Очищаем на всякий случай
                 const contentWrapper = document.createElement('div');
-                contentWrapper.style.whiteSpace = 'nowrap';
+                contentWrapper.style.whiteSpace = 'nowrap'; // Чтобы спаны не переносились
 
                 const spacing = '&nbsp;'.repeat(spacingValue);
                 const textToRepeat = text.trim() + spacing;
 
+                // Дублируем текст 4 раза в отдельных span
                 for (let i = 0; i < 4; i++) {
                     const span = document.createElement('span');
                     span.innerHTML = textToRepeat;
@@ -918,9 +974,11 @@
                 }
                 marqueeContainer.appendChild(contentWrapper);
 
+                // Запускаем новую анимацию
                 animateMarquee();
             }
 
+            // --- Settings Management ---
 
             function gatherAllSettings() {
                 const settings = {
@@ -971,6 +1029,7 @@
 
             function applyAllSettings(settings) {
                 try {
+                    // Video settings
                     const vs = settings.video;
                     gridSelect.value = vs.grid;
                     playbackModeSelect.value = vs.playbackMode;
@@ -984,8 +1043,10 @@
                     borderWidthValue.textContent = vs.borderWidth || 0;
                     borderColorInput.value = vs.borderColor || '#000000';
 
+                    // Rebuild playlist with file names (actual files need to be re-selected by user). No URLs needed.
                     playlist = vs.playlistFileNames.map(name => ({ file: { name: name } }));
 
+                    // Logo settings
                     const ls = settings.logo;
                     logoFileName.value = ls.fileName || '';
                     logoSizeSlider.value = ls.size;
@@ -1003,6 +1064,7 @@
                     logoBlurSlider.value = ls.blur;
                     logoBlurValue.textContent = ls.blur;
 
+                    // Marquee settings
                     const ms = settings.marquee;
                     marqueeEnableCheckbox.checked = ms.enabled;
                     marqueeTextInput.value = ms.text;
@@ -1029,16 +1091,18 @@
                     marqueeBgOpacitySlider.value = ms.bgOpacity;
                     marqueeBgOpacityValue.textContent = ms.bgOpacity;
 
+                    // --- Trigger updates to apply all settings visually ---
                     renderPlaylist();
                     updateVideoGrid();
                     updateLogo();
                     updateMarquee();
 
+                    // Update visibility of controls based on loaded state
                     videoBgColorInput.style.display = useVideoBgCheckbox.checked ? 'block' : 'none';
 
                 } catch (error) {
                     console.error("Failed to apply settings:", error);
-                    alert("Failed to apply settings. The file may be corrupt or in the wrong format.");
+                    alert("Не удалось применить настройки. Файл поврежден или имеет неверный формат.");
                 }
             }
 
@@ -1066,12 +1130,16 @@
                     applyAllSettings(settings);
                 };
                 reader.readAsText(file);
-                loadSettingsInput.value = '';
+                loadSettingsInput.value = ''; // Reset for next load
             }
 
+            // --- Назначаем обработчики событий ---
+            // Видео
             videoFilesInput.addEventListener('change', () => {
+                // 1. Create new playlist from selected files (no URLs needed)
                 playlist = Array.from(videoFilesInput.files).map(file => ({ file: file }));
 
+                // 2. Update UI
                 renderPlaylist();
                 updateVideoGrid();
             });
@@ -1089,6 +1157,7 @@
                 }
             });
 
+            // --- NEW: Drag-and-drop for playlist items ---
             let draggedElement = null;
 
             playlistContainer.addEventListener('dragstart', (event) => {
@@ -1096,6 +1165,7 @@
                 if (target) {
                     draggedElement = target;
                     event.dataTransfer.effectAllowed = 'move';
+                    // Add a class for visual feedback, with a slight delay to not affect the drag image
                     setTimeout(() => {
                         target.classList.add('dragging');
                     }, 0);
@@ -1110,7 +1180,7 @@
             });
 
             playlistContainer.addEventListener('dragover', (event) => {
-                event.preventDefault();
+                event.preventDefault(); // Necessary to allow dropping
             });
 
             playlistContainer.addEventListener('drop', (event) => {
@@ -1140,6 +1210,7 @@
             borderWidthSlider.addEventListener('input', (e) => { borderWidthValue.textContent = e.target.value; updateVideoGrid(); });
             borderColorInput.addEventListener('input', updateVideoGrid);
 
+            // Логотип
             logoFileInput.addEventListener('change', () => {
                 const file = logoFileInput.files[0];
                 logoFileName.value = file ? file.name : '';
@@ -1154,6 +1225,7 @@
             logoBgOpacitySlider.addEventListener('input', (e) => { logoBgOpacityValue.textContent = e.target.value; updateLogo(); });
             logoPositionRadios.forEach(radio => radio.addEventListener('change', updateLogo));
 
+            // Бегущая строка
             marqueeEnableCheckbox.addEventListener('change', updateMarquee);
             marqueeTextInput.addEventListener('input', updateMarquee);
             marqueeFontFamilySelect.addEventListener('change', updateMarquee);
@@ -1171,15 +1243,20 @@
             marqueeBgColorInput.addEventListener('input', updateMarquee);
             marqueeBgOpacitySlider.addEventListener('input', (e) => { marqueeBgOpacityValue.textContent = e.target.value; updateMarquee(); });
 
+            // Управление
             saveSettingsBtn.addEventListener('click', saveSettingsToFile);
             loadSettingsBtn.addEventListener('click', () => loadSettingsInput.click());
             loadSettingsInput.addEventListener('change', loadSettingsFromFile);
 
+            // Инициализация состояния контролов (на случай перезагрузки страницы с активным чекбоксом)
             videoBgColorInput.style.display = useVideoBgCheckbox.checked ? 'block' : 'none';
 
+            // Первоначальный вызов для отрисовки сетки при загрузке страницы
             renderPlaylist();
             updateVideoGrid();
+            // Первоначальный вызов для установки состояния логотипа
             updateLogo();
+            // Первоначальный вызов для установки состояния бегущей строки
             updateMarquee();
 
         });

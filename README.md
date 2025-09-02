@@ -63,7 +63,7 @@ The project is built on standard web technologies, requiring no external librari
 
 ## Quick Start
 
-1.  **Gather Files:** Place all the files you plan to use (videos, logo) in the same folder as `index.html`.
+1.  **Gather Files:** Place all the files you plan to use (videos, logo) in the same folder as `index.html` (or `index.ru.html` if you are Russian).
 2.  **Run the Player:** Open the `index.html` file in a modern web browser (e.g., Chrome, Firefox, Safari).
 3.  **Configure:** Select files and customize the player's styles. Settings can be saved to a `settings.json` file for quick restoration later.
 
